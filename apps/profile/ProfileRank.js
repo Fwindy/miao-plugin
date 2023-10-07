@@ -14,14 +14,15 @@ export async function groupRank (e) {
   } else if (/极限/.test(msg)) {
     type = 'super'
   }
-  let groupId = e.group_id
+  let groupIdmatch = msg.match(/\d+/g)
+  let groupId = groupIdmatch ? groupIdmatch[0] : e.group_id
   if (!type || (!groupId && type !== 'super')) {
     return false
   }
   let mode = /(分|圣遗物|评分|ACE)/.test(msg) ? 'mark' : 'dmg'
   mode = /(词条)/.test(msg) ? 'valid' : mode
   mode = /(双爆)/.test(msg) ? 'crit' : mode
-  let name = msg.replace(/(#|星铁|最强|最高分|第一|词条|双爆|极限|最高|最多|最牛|圣遗物|评分|群内|群|排名|排行|面板|面版|详情|榜)/g, '')
+  let name = msg.replace(/(#|星铁|最强|最高分|第一|词条|双爆|极限|最高|最多|最牛|圣遗物|评分|群内|群|排名|排行|面板|面版|详情|榜|\d)/g, '')
   let char = Character.get(name)
   if (!char) {
     // 名字不存在或不为列表模式，则返回false
@@ -182,6 +183,7 @@ async function renderCharRankList ({ e, uids, char, mode, groupId }) {
     let uid = ds.uid || ds.value
     let player = Player.create(uid, e.isSr ? 'sr' : 'gs')
     let avatar = player.getAvatar(ds.charId || char.id)
+    let group = Bot.pickGroup(groupId) || e.group
     if (!avatar) {
       continue
     }
@@ -213,8 +215,8 @@ async function renderCharRankList ({ e, uids, char, mode, groupId }) {
       if (uid) {
         let userInfo = await ProfileRank.getUidInfo(uid)
         try {
-          if (userInfo?.qq && e?.group?.pickMember) {
-            let member = e.group.pickMember(userInfo.qq)
+          if (userInfo?.qq && group?.pickMember) {
+            let member = group?.pickMember(userInfo.qq)
             if (member?.getAvatarUrl) {
               let img = await member.getAvatarUrl()
               if (img) {
